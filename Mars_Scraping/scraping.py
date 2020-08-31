@@ -10,6 +10,7 @@ def scrape_all():
     browser = Browser("chrome", executable_path="chromedriver", headless=True)
 
     news_title, news_paragraph = mars_news(browser)
+    hemi_image_url, hemi_title = mars_hemi(browser) 
 
     # Run all scraping functions and store results in a dictionary
     data = {
@@ -17,8 +18,11 @@ def scrape_all():
         "news_paragraph": news_paragraph,
         "featured_image": featured_image(browser),
         "facts": mars_facts(),
-        "last_modified": dt.datetime.now()
-    }
+        "last_modified": dt.datetime.now(),
+        "Hemisphere Image": hemi_image_url,
+        "Hemisphere Title": hemi_title 
+        }
+
 
     # Stop webdriver and return data
     browser.quit()
@@ -99,6 +103,51 @@ def mars_facts():
 
     # Convert dataframe into HTML format, add bootstrap
     return df.to_html(classes="table table-striped")
+
+def mars_hemi(browser):
+    try:
+        # 1. Use browser to visit the URL 
+        url = 'https://astrogeology.usgs.gov/search/results?q=hemisphere+enhanced&k1=target&v1=Mars'
+        browser.visit(url)
+
+        base_url = 'https://astrogeology.usgs.gov'
+
+        html = browser.html
+        hemisphere_soup = soup(html, 'html.parser')
+        hemisphere_items = hemisphere_soup.find_all('div', class_=['description'])
+
+        # 2. Create a list to hold the images and titles.
+        hemisphere_image_urls = []
+        hemi_image_data = {}
+
+        # 3. Write code to retrieve the image urls and titles for each hemisphere.
+        for hemi_item in hemisphere_items:
+            #get url for each hemisphere and pull data
+            hemi_url =base_url + hemi_item.a['href']
+    
+            #get title for each hemisphere 
+            browser.visit(hemi_url)
+            html = browser.html
+            hemi_soup = soup(html, 'html.parser')
+            hemi_title = hemi_soup.find('h2').text
+   
+    
+            # get image url for each hemisphere
+            hemi_image_url = hemi_soup.find('img', class_="wide-image").get('src')
+            hemi_image_url = base_url + hemi_image_url
+   
+    
+            hemi_image_data["img_url"] = hemi_image_url
+            hemi_image_data["title"]= hemi_title
+            hemisphere_image_urls.append(hemi_image_data)
+    
+            # 4. Print the list that holds the dictionary of each image url and title.
+            # hemisphere_image_urls
+    except AttributeError:
+        return None
+    
+    return hemi_image_url, hemi_title
+
 
 if __name__ == "__main__":
 
